@@ -1,4 +1,4 @@
-# 实验报告与图片资源（禁止上传云端）
+# 实验报告与图片资源（禁止上传云端，保护学生隐私）
 *report.md
 *report.pdf
 *.pdf
@@ -8,6 +8,14 @@
 lab1/report.md
 lab1/report.pdf
 lab1/submission/report.pdf
+lab2/report.md
+lab2/report.pdf
+lab2/submission/report.pdf
+lab2/tmp/
+
+# 开发板硬件手册（允许上传云端）
+!开发板手册/
+!开发板手册/*.pdf
 
 # Vivado 生成文件与临时工程缓存
 *.jou
