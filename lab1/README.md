@@ -149,10 +149,16 @@
 
 ---
 
-## 六、交付文件与提交规范
+## 六、实验工程目录结构
 
-按照课程提交要求（打包为 `submission.zip` 提交至 HITSZ Grader 平台）：
-- `mux.v`：多路复用器 Verilog 设计代码
-- `pin.xdc`：Xilinx Artix-7 物理管脚与电平约束
-- `report.pdf`：实验报告 PDF 文档（包含详细测试说明与电路分析）
-- `submission.zip`：提交归档压缩包
+```
+lab1/
+├── README.md           # 实验1 详细指导文档（本文档）
+├── doc/                # 指导讲义与参考文档
+└── mux_project/        # Vivado 完整工程目录
+    ├── mux_project.xpr # Vivado 工程启动文件
+    └── mux_project.srcs/
+        ├── constrs_1/new/pin.xdc     # 引脚物理约束文件
+        ├── sim_1/new/mux_sim.v       # 仿真测试激励文件
+        └── sources_1/new/mux.v       # 多路复用器设计源文件
+```

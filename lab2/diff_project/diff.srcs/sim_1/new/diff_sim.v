@@ -8,29 +8,29 @@ reg d  ;
 wire q;
 
 initial begin
-    clr = 1'b1;     //  ºŒª º
+    clr = 1'b1;     // ≥ı º∏¥Œª£¨À˘”– ‰»Î≥ı ºªØ
     en  = 1'b0;
     clk = 0;
     d   = 0;
 
-    #10;            // –¥  
+    #10;            // –¥»Î  
     clr = 1'b0;
     en  = 1'b1;
     d   = 1'b1;
     #10 d = 1'b0;
     #10 d = 1'b1;
 
-    #10;            //»°
+    #10;            //∂¡»°
     en = 1'b0;
     d  = 1'b0;
 
-    #10 clr = 1'b1; //Ï≤Ω
+    #10 clr = 1'b1; //“Ï≤Ω«Â¡„
     #50 $finish;
 end
 
-always #5 clk = ~clk;   // ±
+always #5 clk = ~clk;   //…˙≥… ±÷”
 
-dff u_dff(              //ƒ£
+dff u_dff(              //ƒ£øÈ¿˝ªØ
     .clk(clk),
     .clr(clr),
     .en(en),

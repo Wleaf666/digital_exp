@@ -15,46 +15,31 @@
 
 ---
 
-## 仓库架构与多 Lab 设计规范
+## 仓库架构与工程目录规范
 
 本仓库采用**分层模块化架构**：
 - **根目录总 `README.md`（本文档）**：全局性介绍整个实验课程的体系架构、开发环境、Verilog 代码规范、机房设备注意事项及 HITSZ Grader 平台的提交考核规则。
-- **各实验独立子目录（`labX/`）**：
-  - **云端同步内容**：`README.md`（作为每个实验的详细指导文档）、`doc/`（官方讲义与原理）、源码文件（`.v`、`.xdc`）及完整 Vivado 工程压缩包；
-  - **本地私有内容（受 `.gitignore` 保护，不上传云端）**：
-    - `pictures/`：本地保存实物验证照片及波形截图；
-    - `submission/`：本地保存待提交材料，包含已填好姓名学号的 `report.md`、导出的 `report.pdf`、以 `学号_姓名.pdf` 命名的报告副本，以及最终打包好的 `submission.zip` 压缩包。
+- **各实验独立子目录（`labX/`）**：每个实验独立成专属文件夹，包含详细实验说明（`README.md`）、官方指导讲义（`doc/`）以及独立的 Vivado 完整工程目录。
 
 ```
 .
 ├── LICENSE                     # 仓库开源许可协议
 ├── README.md                   # 课程全局总览与多 Lab 架构指导文档（本文件）
-├── .gitignore                  # Git 忽略规则（忽略 submission/、pictures/ 及临时缓存）
+├── .gitignore                  # Git 忽略规则
 ├── 开发板手册/                 # 官方硬件参考手册（Minisys 与 EGO1）
-├── lab1/                       # 实验1：Vivado使用与组合电路（多路复用器）
-│   ├── README.md               # 实验1 详细指导文档（实验内容、引脚分配、波形分析与上板工况）
-│   ├── doc/doc.md              # 实验1 原始讲义与要求说明
-│   ├── mux_project/            # Vivado 纯净工程源文件
-│   ├── mux_project.zip         # 完整工程备份压缩包
-│   ├── pictures/               # [本地私有] 实物照片与波形截图
-│   └── submission/             # [本地私有] 提交归档目录（含已填姓名学号报告与 submission.zip）
+├── lab1/                       # 实验1：Vivado使用与组合电路
+│   ├── README.md               # 实验1 详细指导文档
+│   ├── doc/                    # 实验1 讲义与参考文档
+│   └── mux_project/            # 多路复用器 Vivado 完整工程目录
 ├── lab2/                       # 实验2：触发器与寄存器文件
-│   ├── README.md               # 实验2 详细指导文档（D触发器与寄存器堆设计规范与测试指南）
-│   ├── dff/                    # D 触发器设计、仿真激励与约束
-│   ├── reg8file/               # 8位×8深度 寄存器文件设计、完整 testbench 与约束
-│   ├── doc/                    # 实验2 讲义、实验原理与仿真示例文档
-│   ├── projects.zip            # 完整工程 Vivado 备份包
-│   ├── pictures/               # [本地私有] 实物照片与波形截图
-│   └── submission/             # [本地私有] 提交归档目录（含已填姓名学号报告与 submission.zip）
+│   ├── README.md               # 实验2 详细指导文档
+│   ├── doc/                    # 实验2 讲义与原理文档
+│   ├── diff_project/           # D 触发器 Vivado 完整工程目录
+│   └── reg8file_project/       # 寄存器文件 Vivado 完整工程目录
 ├── lab3/                       # 实验3：计数器与可调流水灯
-│   ├── README.md               # 实验3 详细指导文档（流水灯设计、参数分频、波形分析与计算题）
-│   ├── flowing_lights.v        # 流水灯核心模块设计源码
-│   ├── testbench.v             # 仿真测试激励文件
-│   ├── constraints.xdc         # 物理引脚约束文件
-│   ├── flowing_lights.zip      # Vivado 完整工程备份压缩包
-│   ├── doc/                    # 实验3 官方指导讲义文档
-│   ├── pictures/               # [本地私有] 仿真波形截图
-│   └── submission/             # [本地私有] 提交归档目录（含已填姓名学号报告与 submission.zip）
+│   ├── README.md               # 实验3 详细指导文档
+│   ├── doc/                    # 实验3 讲义与原理文档
+│   └── flowing_lights_project/ # 流水灯 Vivado 完整工程目录
 ├── lab4/                       # [规划中] 实验4：有限状态机 (FSM) 建模与矩阵键盘扫描
 └── lab5/                       # [规划中] 实验5：综合数字系统设计与外设集成
 ```
@@ -129,7 +114,6 @@
 - **设计文件**：`*.v`（Verilog 设计源码）
 - **约束文件**：`*.xdc`（物理引脚约束文件）
 - **实验报告**：`学号_姓名.pdf`（清晰排版的 PDF 报告）
-- **本地 submission/ 自动化管理**：各 Lab 本地目录下的 `submission/` 文件夹已预打包生成好符合上述命名规范的 `.zip` 提交文件，可直接提取上传；该目录受 Git 忽略保护，绝不上传至公开代码仓库。
 - **禁止提交整项 Vivado 工程**：自动生成的临时文件（`.runs`, `.cache`, `.sim`, `*.dcp`, `*.bit` 等）禁止提交，提交整个工程将酌情扣分。
 
 ### 2. 截止时间与评分政策

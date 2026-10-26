@@ -11,7 +11,7 @@ reg  [2:0] wsel;
 reg  [2:0] rsel;
 wire [7:0] q;
 
-//  100MHz 时樱 10ns
+// 生成 100MHz 仿真时钟，周期 10ns
 always #5 clk = ~clk;
 
 initial begin

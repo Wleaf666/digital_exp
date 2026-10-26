@@ -37,14 +37,14 @@ module flowing_lights
 reg  [23:0] cnt;
 wire [23:0] current_cnt = (freq_ctrl == 1'b0) ? CNT_500HZ : CNT_10HZ;
 wire        cnt_end     = (cnt == current_cnt);
-wire        en          = cnt_end;   // ÆµÊ¹Ü£Ã¿Î»Ö»Ò»
+wire        en          = cnt_end;   // ·ÖÆµÊ¹ÄÜ£¬Ã¿¸öÒÆÎ»ÖÜÆÚÖ»À­¸ßÒ»ÅÄ
 
-// Í³ÆµÇ°Äµ0~84 Î»ã¹»
+// Í³¼Æµ±Ç°µãÁÁµÄµÆÊý£¨0~8£¬4 Î»×ã¹»£©
 wire [3:0] led_counts = leds[0] + leds[1] + leds[2] + leds[3]
                       + leds[4] + leds[5] + leds[6] + leds[7];
 
 //------------------------------------------------------------------
-// ÆµÆµ current_cnt ã£¬ en Ê¹
+// ·ÖÆµ¼ÆÊýÆ÷£º¼Æµ½ current_cnt ¹éÁã£¬²úÉú en Ê¹ÄÜ
 //------------------------------------------------------------------
 always @(posedge clk or posedge rst) begin
     if(rst)
@@ -56,27 +56,27 @@ always @(posedge clk or posedge rst) begin
 end
 
 //------------------------------------------------------------------
-// Ë®
+// Á÷Ë®µÆÖ÷Ìå
 //------------------------------------------------------------------
 always @(posedge clk or posedge rst) begin
     if(rst)
         leds <= 8'h01;
     else if(en) begin
-        if(model_set == 1'b0) begin                 // ---------- Ä£Ê½ ----------
+        if(model_set == 1'b0) begin                 // ---------- µ¥µÆÄ£Ê½ ----------
             if(led_counts != 4'd1)
-                leds <= 8'h01;                      // ì³£Î»Îª
+                leds <= 8'h01;                      // µÆÊýÒì³££¬¸´Î»Îªµ¥µÆ
             else if(dir_ctrl == 1'b0)
-                leds <= {leds[0],  leds[7:1]};      // Ñ­ 1 Î»
+                leds <= {leds[0],  leds[7:1]};      // Ñ­»·ÓÒÒÆ 1 Î»
             else
-                leds <= {leds[6:0], leds[7]};       // Ñ­ 1 Î»
+                leds <= {leds[6:0], leds[7]};       // Ñ­»·×óÒÆ 1 Î»
         end
-        else begin                                  // ---------- Ë«Ä£Ê½ ----------
+        else begin                                  // ---------- Ë«µÆÄ£Ê½ ----------
             if(led_counts != 4'd2)
-                leds <= 8'h03;                      // ì³£Î»ÎªË«
+                leds <= 8'h03;                      // µÆÊýÒì³££¬¸´Î»ÎªË«µÆ
             else if(dir_ctrl == 1'b0)
-                leds <= {leds[1:0], leds[7:2]};     // Ñ­ 2 Î»
+                leds <= {leds[1:0], leds[7:2]};     // Ñ­»·ÓÒÒÆ 2 Î»
             else
-                leds <= {leds[5:0], leds[7:6]};     // Ñ­ 2 Î»
+                leds <= {leds[5:0], leds[7:6]};     // Ñ­»·×óÒÆ 2 Î»
         end
     end
 end

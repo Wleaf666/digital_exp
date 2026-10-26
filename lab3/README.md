@@ -113,22 +113,13 @@ module flowing_lights #(
 
 ---
 
-## 六、工程目录结构说明
+## 六、实验工程目录结构
 
 ```
 lab3/
-├── flowing_lights.v    # 核心设计源文件
-├── testbench.v         # 仿真激励文件
-├── constraints.xdc     # 引脚物理约束文件
-├── flowing_lights.zip  # Vivado 完整工程备份
-├── doc/                # 指导书讲义文档
-├── pictures/           # 仿真波形截图（本地保存，不上传云端）
-└── submission/         # 本地提交归档目录（受 .gitignore 保护，不上传云端）
-    ├── flowing_lights.v
-    ├── constraints.xdc
-    ├── testbench.v
-    ├── report.md       # 含姓名学号与完整波形/计算题分析的实验报告
-    ├── report.pdf      # 编译生成的报告 PDF
-    ├── 332025311808_余凌烨.pdf
-    └── submission.zip  # 提交打包压缩包
+├── README.md                   # 实验3 详细指导文档（本文档）
+├── doc/                        # 指导讲义与原理文档
+└── flowing_lights_project/     # Vivado 完整工程目录
+    ├── flowing_lights.xpr      # Vivado 工程文件
+    └── flowing_lights.srcs/    # 源码、激励与约束
 ```
