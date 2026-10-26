@@ -168,12 +168,14 @@ endmodule
 
 ```
 lab2/
-├── README.md               # 实验2 详细指导文档（本文档）
-├── doc/                    # 指导讲义与原理文档
-├── diff_project/           # D 触发器 Vivado 完整工程目录
-│   ├── diff.xpr            # Vivado 工程文件
-│   └── diff.srcs/          # 源码、激励与约束
-└── reg8file_project/       # 寄存器文件 Vivado 完整工程目录
-    ├── reg8file.xpr        # Vivado 工程文件
-    └── reg8file.srcs/      # 源码、激励与约束
+├── README.md           # 实验2 详细指导文档（本文档）
+├── doc/                # 讲义与原理文档
+├── diff_project/       # D 触发器工程目录
+│   ├── diff.v          # D 触发器设计文件
+│   ├── diff_sim.v      # D 触发器仿真激励
+│   └── diff.xdc        # D 触发器引脚约束
+└── reg8file_project/   # 寄存器文件工程目录
+    ├── reg8file.v      # 寄存器文件设计文件
+    ├── testbench.v     # 寄存器文件仿真激励
+    └── reg8.xdc        # 寄存器文件引脚约束
 ```
