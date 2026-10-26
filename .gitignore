@@ -1,20 +1,21 @@
-# 实验报告与图片资源（禁止上传云端，保护学生隐私）
+# 本地提交文件夹与私密报告/图片（禁止上传云端，本地保存）
+submission/
+**/submission/
+submission.zip
+**/submission.zip
+*submission*
+pictures/
+**/pictures/
+*pictures*
 *report.md
 *report.pdf
 *.pdf
-*pictures*
 *.png
 *.jpg
 *.jpeg
 *.orig.png
 .backup_pictures/
-lab1/report.md
-lab1/report.pdf
-lab1/submission/report.pdf
-lab2/report.md
-lab2/report.pdf
-lab2/submission/report.pdf
-lab2/tmp/
+lab*/tmp/
 
 # 开发板硬件手册（允许上传云端）
 !开发板手册/
