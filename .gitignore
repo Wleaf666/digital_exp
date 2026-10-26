@@ -3,6 +3,9 @@
 *report.pdf
 *.pdf
 *pictures*
+*.png
+*.jpg
+*.jpeg
 *.orig.png
 .backup_pictures/
 lab1/report.md
