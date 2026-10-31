@@ -42,7 +42,6 @@
 │   └── flowing_lights_project/ # 流水灯工程（含设计 flowing_lights.v、仿真 testbench.v、约束 constraints.xdc）
 ├── lab4/                       # 实验4：数码管控制器
 │   ├── README.md               # 实验4 详细指导文档
-│   ├── REPORT_GUIDE.md         # 实验报告全流程操作指南
 │   ├── doc/                    # 实验4 讲义与原理文档
 │   └── seg_ctrl_project/       # 数码管控制器工程（含设计、仿真与约束文件）
 └── lab5/                       # [规划中] 实验5：综合数字系统设计与外设集成
