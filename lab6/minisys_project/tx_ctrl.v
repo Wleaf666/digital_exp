@@ -63,7 +63,7 @@ module tx_ctrl #(
                     end else begin
                         tx_cnt_ones <= tx_cnt_ones + 4'd1;
                     end
-                end else if (gap_cnt >= CHAR_GAP - 1'b1) begin
+                end else if (gap_cnt >= CHAR_GAP - 20'd1) begin
                     gap_cnt <= 20'd0;
                     if (char_idx == 4'd12) begin
                         sending  <= 1'b0;

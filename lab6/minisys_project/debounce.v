@@ -33,14 +33,11 @@ module debounce #(
             btn_clean <= 1'b0;
         end else begin
             if (btn_r1 != btn_prev) begin
-
                 btn_prev <= btn_r1;
                 cnt      <= 32'd0;
             end else if (cnt < CNT_MAX) begin
-
                 cnt <= cnt + 32'd1;
             end else begin
-
                 btn_clean <= btn_prev;
             end
         end

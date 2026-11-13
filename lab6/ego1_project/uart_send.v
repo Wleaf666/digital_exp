@@ -37,19 +37,19 @@ module uart_send (
                     next_state = IDLE;
             end
             START: begin
-                if (cnt == BIT_CYC - 1'b1)
+                if (cnt == BIT_CYC - 14'd1)
                     next_state = DATA;
                 else
                     next_state = START;
             end
             DATA: begin
-                if (cnt == BIT_CYC - 1'b1 && bit_idx == 3'd7)
+                if (cnt == BIT_CYC - 14'd1 && bit_idx == 3'd7)
                     next_state = STOP;
                 else
                     next_state = DATA;
             end
             STOP: begin
-                if (cnt == BIT_CYC - 1'b1)
+                if (cnt == BIT_CYC - 14'd1)
                     next_state = IDLE;
                 else
                     next_state = STOP;
@@ -77,7 +77,7 @@ module uart_send (
                     end
                 end
                 START: begin
-                    if (cnt == BIT_CYC - 1'b1) begin
+                    if (cnt == BIT_CYC - 14'd1) begin
                         cnt     <= 14'd0;
                         bit_idx <= 3'd0;
                         dout    <= data_reg[0];
@@ -86,7 +86,7 @@ module uart_send (
                     end
                 end
                 DATA: begin
-                    if (cnt == BIT_CYC - 1'b1) begin
+                    if (cnt == BIT_CYC - 14'd1) begin
                         cnt <= 14'd0;
                         if (bit_idx == 3'd7) begin
                             dout <= 1'b1;
@@ -99,7 +99,7 @@ module uart_send (
                     end
                 end
                 STOP: begin
-                    if (cnt == BIT_CYC - 1'b1) begin
+                    if (cnt == BIT_CYC - 14'd1) begin
                         cnt  <= 14'd0;
                         dout <= 1'b1;
                     end else begin
