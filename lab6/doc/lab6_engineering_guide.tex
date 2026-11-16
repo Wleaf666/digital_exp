@@ -1,0 +1,319 @@
+\documentclass[UTF8,zihao=-4,fontset=fandol]{ctexart}
+\usepackage[a4paper,margin=21mm,headheight=15pt]{geometry}
+\usepackage{amsmath,amssymb,booktabs,tabularx,longtable,array,enumitem}
+\usepackage{xcolor,tikz,hyperref,fancyhdr,listings}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,fit,calc}
+\definecolor{ink}{HTML}{183B56}
+\definecolor{ruleblue}{HTML}{346789}
+\definecolor{soft}{HTML}{F1F5F8}
+\hypersetup{colorlinks=true,linkcolor=ink,urlcolor=ruleblue,pdftitle={实验6工程说明与检查指南}}
+\pagestyle{fancy}
+\fancyhf{}\lhead{实验6：UART收发与简易计算器}\rhead{工程阅读与检查}\cfoot{\thepage}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+\setlength{\emergencystretch}{2em}
+\setlist{itemsep=3pt,topsep=4pt,leftmargin=1.6em}
+\renewcommand{\arraystretch}{1.2}
+\setcounter{tocdepth}{1}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcommand{\code}[1]{\texttt{\detokenize{#1}}}
+\newcommand{\key}[1]{\par\textbf{\textcolor{ink}{#1}}\par}
+\newcommand{\chapterpage}[1]{\clearpage\section{#1}}
+\lstset{basicstyle=\ttfamily\small,breaklines=true,columns=fullflexible,keepspaces=true,frame=single,rulecolor=\color{ruleblue},backgroundcolor=\color{soft},showstringspaces=false}
+\tikzset{box/.style={draw=ruleblue,rounded corners,align=center,font=\small,minimum height=10mm,fill=soft},flow/.style={-{Latex[length=2mm]},thick,draw=ruleblue},state/.style={circle,draw=ruleblue,thick,minimum size=19mm,align=center,font=\small}}
+\begin{document}
+\begin{center}
+{\LARGE\bfseries\color{ink} 实验6工程说明与检查指南}\par
+\vspace{4mm}
+{\large 必做UART收发系统＋附加简易计算器}\par
+\vspace{2mm}
+Minisys上板版本为主；附EGO1引脚与显示极性对照
+\end{center}
+
+\key{本说明对应的版本}
+\begin{itemize}
+\item 你提供的上板工程位于 \code{lab6/lab6/lab6/}；主板为Minisys。已核对上传源码，功能版本只将组别改为03。
+\item 完整发送内容是 \code{03+2025311308}，共13个ASCII字符，不含 \code{hitsz}，也不包含末尾回车换行。
+\item 本次仅规范化编码与整理职责，不改变状态编码、复位值、计数阈值、显示顺序、计算结果或按键处理行为；组别03已保留。
+\item “上板正常”来自你的实际测试。本次不重新运行硬件仿真，也不把静态检查写成Vivado Linter或时序收敛结果。
+\end{itemize}
+
+\key{十秒钟认识工程}
+\begin{tabularx}{\linewidth}{p{25mm}Y}
+\toprule
+项目 & 记住的结论\\\midrule
+系统时钟 & 100MHz，周期10ns；所有功能寄存器用同一个时钟，不用按键或分频信号当时钟。\\
+串口格式 & 9600档、8N1、LSB先传；内部每位10416拍，约104.16微秒。\\
+\code{SW0=0} & 最近6个十六进制字符＋累计发送字符数；S2点按发送组别和学号。\\
+\code{SW0=1} & 串口输入1～2位十进制四则表达式，等号后计算并回传结果；数码管同步显示。\\
+S1 & 高有效异步复位，清空所有功能状态。\\
+顶层规则 & \code{top.v}仅声明连接线、传递参数、例化模块，不写业务逻辑。\\\bottomrule
+\end{tabularx}
+
+\key{快速阅读顺序}先看第2节框图和信号流，再看第3、4节UART，最后看第6、7节计算器。检查前直接按第9节清单操作。
+\clearpage
+\tableofcontents
+
+\chapterpage{目录与模块如何对应}
+\begin{tabularx}{\linewidth}{p{49mm}Y}
+\toprule
+目录 & 用途\\\midrule
+\code{minisys_project/} & Minisys必做题精简源码。\\
+\code{ego1_project/} & EGO1必做题精简源码。\\
+\code{calc_minisys_project/} & Minisys完整计算器工程；通过SW0兼容必做题。你上传的上板版本对应这一套。\\
+\code{calc_ego1_project/} & 同样的业务功能，改用EGO1数码管与约束。\\
+\code{lab6/lab6/} & 你上传、已经上板验证的Vivado工程；只同步其源文件，不更改缓存、运行结果与工程配置。\\\bottomrule
+\end{tabularx}
+
+\key{设计源文件与职责}
+\begin{longtable}{p{40mm}p{112mm}}
+\toprule 文件 & 负责的事情\\\midrule\endhead
+\code{top.v} & 纯连接；UART、按键、接收显示、发送控制、计算器、模式选择、数码管驱动之间的布线。\\
+\code{uart_recv.v} & 把RX串行线转换成8位 \code{data} 和单拍 \code{valid}。不解析ASCII，不识别算式。\\
+\code{uart_send.v} & 把单拍有效的8位 \code{data} 发送成完整串行帧。忙时不接收新请求。\\
+\code{rx_ctrl.v} & ASCII十六进制字符识别，维护最近6个字符和有效位掩码。\\
+\code{tx_ctrl.v} & S2请求触发13字符序列，控制2ms字符起始间隔，累计发送请求字符数。\\
+\code{debounce.v} & 两级输入采样后，稳定计时确认按键电平。\\
+\code{edge_detect.v} & 比较相邻两拍，将持续高电平变成一拍上升沿脉冲。\\
+\code{mode_mux.v} & 仅计算器工程存在；按SW0选择RX有效、S2请求、TX和显示路径。\\
+\code{calc_fsm.v} & 算式解析、运算、二进制转BCD、结果格式化与发送调度。\\
+\code{led_ctrl_unit.v} & 显示数据轮询、位使能、段码译码。不会自动理解ASCII和十进制整数。\\
+\code{pin.xdc} & 物理管脚、电平标准、100MHz主时钟约束。\\\bottomrule
+\end{longtable}
+仿真文件 \code{uart_recv_tb.v}、\code{calc_tb.v} 只加入Simulation Sources，不参与综合。各平台都定义同名模块，\textbf{一个Vivado工程只添加一个平台目录}，不能把四个目录一起加入。
+
+\chapterpage{顶层连接与信号流}
+\begin{center}
+\begin{tikzpicture}[node distance=10mm]
+\node[box] (rx) {\code{uart_recv}\\串行接收};
+\node[box,right=24mm of rx] (mux) {\code{mode_mux}\\按模式路由};
+\node[box,above right=9mm and 15mm of mux] (base) {\code{rx_ctrl / tx_ctrl}\\必做显示与学号发送};
+\node[box,below right=9mm and 15mm of mux] (calc) {\code{calc_fsm}\\计算器解析与结果};
+\node[box,right=73mm of mux] (out) {\code{uart_send}\\\code{led_ctrl_unit}};
+\draw[flow] (rx)--node[above,font=\tiny,align=center]{\code{rx_valid}\\\code{rx_data[7:0]}} (mux);
+\draw[flow] (mux)--(base);
+\draw[flow] (mux)--(calc);
+\draw[flow] (base)--(out);
+\draw[flow] (calc)--(out);
+\node[align=center,font=\small,above=16mm of mux] (key) {S2→消抖→边沿脉冲\\SW0→模式选择};
+\draw[flow] (key)--(mux);
+\end{tikzpicture}
+\end{center}
+图为功能数据流概览；输出路径的真正选择发生在同一个 \code{mode_mux} 中，再送给共享的UART发送器和数码管驱动，不是两个模块同时驱动引脚。
+
+\subsection{一条输入算式如何经过系统}
+\begin{enumerate}
+\item PC以STR模式发送 \code{12+3=}，每个字符都是一个独立8N1串口帧。
+\item \code{uart_recv}收完一个字节，输出一拍 \code{rx_valid} 和对应ASCII值。
+\item SW0为1时，\code{mode_mux}将有效脉冲交给 \code{calc_fsm}。
+\item 计算器依次收集12、运算符加号和3；遇到等号后计算绝对值和符号，再做BCD转换。
+\item 结果格式化成 \code{15\r\n}，按2ms字节起始间隔送入共享发送器。显示总线变成BCD数值15，使能最低两位。
+\end{enumerate}
+
+\subsection{端口不是函数调用}
+例化 \code{uart_recv u_uart_recv(...)} 表示生成一份并行硬件，并把端口接上线。它不会等到顶层执行到该行才运行。\code{wire}传递电平；\code{assign}描述连续组合逻辑；时钟型 \code{always} 描述寄存器在时钟沿更新。
+
+\subsection{两种模式的共享与隔离}
+SW0为0时只把接收有效信号送到必做解析器，S2脉冲可触发学号发送；为1时只把有效信号送到计算器。未选中模块的\textbf{内部状态不会自动复位}，模式选择也不等待正在发送的一帧结束。演示时应在串口空闲、回复结束后切换模式；必要时切换后按S1，不能在发送过程中拨SW0并期待数据帧完整。
+
+\chapterpage{UART接收：从串行电平得到一个字节}
+\subsection{计数、采样和状态}
+\begin{align*}
+T_{\mathrm{clk}} &= 1/(100\times10^6)=10\,\mathrm{ns},\\
+N_{\mathrm{bit}} &= 10416,\qquad N_{\mathrm{half}}=5208,\\
+T_{\mathrm{bit}} &=10416\times10\,\mathrm{ns}=104.16\,\mu\mathrm{s}.
+\end{align*}
+10416是本工程选择的整数位周期，实际速率约9600.61bps；不是数学上精确的9600。\code{cnt}从0计数，因此位结束判断为10415，半位采样判断为5207。
+
+\begin{tabularx}{\linewidth}{p{20mm}p{35mm}Y}
+\toprule 现态 & 离开条件 & 操作\\\midrule
+\code{IDLE} & \code{neg_edge=1} & 等待接收下降沿，进入起始位计数。\\
+\code{START} & \code{cnt=10415} & 完整经过起始位，进入DATA，位索引从0开始。\\
+\code{DATA} & 位末且索引为7 & 每位 \code{cnt=5207} 时把输入采入 \code{rx_shift[bit_idx]}；位末清零计数，必要时位索引加1。\\
+\code{STOP} & \code{cnt=5207} & 输出 \code{data=rx_shift}、一拍 \code{valid=1}，并回到IDLE。\\\bottomrule
+\end{tabularx}
+
+\subsection{为什么中点采样}
+接收端没有发送端的时钟线，只能依据起始位估计采样时刻。位中点离两边的电平跳变更远，具有更大的时序余量。\code{din_r0/din_r1}对输入采样；\code{neg_edge=(~din_r0)\&din_r1}识别下降沿。
+
+\textbf{不能把两级寄存器说成“彻底消除亚稳态”。}级联采样能够降低亚稳态传播概率，但不是绝对保证；当前下降沿表达式还使用了第一级输出。此处解释的是现有课程级实现，不将其冒充完整工业CDC方案。
+
+\subsection{与指导书要区分的实现细节}
+指导书描述“STOP中点给valid、STOP结束回IDLE”。\textbf{当前上板代码在STOP中点给valid并同时回IDLE。}本次保留该行为，不因为编码规范而延长STOP。状态图必须按当前代码画，不能照搬一个STOP整位结束才返回的图。
+
+接收器也没有验证起始位中点是否仍为低、没有检查停止位电平，不能宣称具备帧错误检测。常规8N1收发按本工程约定使用即可。
+
+\chapterpage{UART发送与必做题的数据处理}
+\subsection{发送器的三段式状态机}
+\begin{center}
+\begin{tikzpicture}[node distance=14mm]
+\node[state] (i) {IDLE\\00};
+\node[state,right=of i] (s) {START\\01};
+\node[state,right=of s] (d) {DATA\\10};
+\node[state,right=of d] (p) {STOP\\11};
+\draw[flow] (i)--node[above,font=\scriptsize]{\code{valid=1}}(s);
+\draw[flow] (s)--node[above,font=\scriptsize]{位末}(d);
+\draw[flow] (d)--node[above,font=\scriptsize]{位末且第7位}(p);
+\draw[flow] (p.south)--++(0,-9mm)-|node[pos=.3,below,font=\scriptsize]{停止位末}(i.south);
+\end{tikzpicture}
+\end{center}
+图为主转移；IDLE在无valid时保持，START/STOP在位末前保持，DATA未发送完8位时保持。代码中的 \code{state} 是现态，\code{next_state} 是组合判定的次态。
+
+\code{valid} 在IDLE有效的时钟沿锁存 \code{data_reg}，同时输出起始位0。之后发送器依次发送bit0到bit7，每位10416拍，最后发送停止位1。复位与空闲均输出1。\textbf{valid撤销后输入data改变，不应该影响已经锁存的这一帧。}
+
+\subsection{13字符的定时调度}
+\code{tx_ctrl} 的 \code{char_idx=0..12} 对应 \code{03+2025311308}。默认 \code{CHAR_GAP=200000}，相邻字符的发送请求\textbf{起始时刻}相差2ms。
+\begin{align*}
+T_{\mathrm{frame}}&=10\times10416\times10\,\mathrm{ns}=1.0416\,\mathrm{ms},\\
+T_{\mathrm{idle}}&\approx2-1.0416=0.9584\,\mathrm{ms}.
+\end{align*}
+因此2ms不是“停止位结束后再等2ms”，并且必须大于一帧时间。本发送器没有busy/ready端口；把CHAR\_GAP随意调得短于一帧，会丢字符。\code{calc_tb} 中的小间隔仅用于直接观察计算器接口，不连接真实UART发送器。
+
+\subsection{累计字符数与按键}
+计数在每个发送请求产生时加1，而不是PC确认收到后加1。正常发送完整一串增加13，两串为26，8串为104，只显示低两位04。发送过程中再次出现的S2脉冲被忽略，没有排队。
+
+\code{debounce}：输入两拍采样；候选电平变化就重新计时；稳定约10ms后更新 \code{btn_clean}。\code{edge_detect}：\code{sig_r0\&~sig_r1}只生成一拍脉冲，所以持续按住S2不会重复触发。按下和松开都要留出稳定确认时间。
+
+\chapterpage{接收显示与两块开发板的区别}
+\subsection{ASCII、数值与BCD是三回事}
+\begin{tabularx}{\linewidth}{p{26mm}p{25mm}Y}
+\toprule 输入/用途 & 实际值 & 含义\\\midrule
+STR发送A & \code{8'h41} & ASCII字符，\code{rx_ctrl}转换为半字节A供数码管译码。\\
+STR发送12 & \code{31 32} & 两个ASCII字节，不是一个二进制整数12。\\
+BCD显示15 & \code{8'h15} & 高半字节是十位1，低半字节是个位5；若按普通无符号数查看，会显示21。\\
+计算器整数15 & 二进制15 & 必须先转BCD，再送数码管；不能把二进制15直接当 \code{8'h15}。\\\bottomrule
+\end{tabularx}
+
+必做题接收有效十六进制字符时执行 \code{rx_buf <= {rx_buf[19:0], hex_val}}。新字符进入DK0，旧字符向高位移动。依次发送A、1、F，显示为A1F；再发送12345678，最终保留345678。非目标字符如CR/LF不占显示位置。
+
+\code{rx_count}饱和到6，生成 \code{rx_en_mask}：0个字符为000000，1个为000001，2个为000011，直到111111。\textbf{空白靠位使能关闭，不是把显示数据写成0。}
+
+\subsection{显示驱动}
+显示总线为 \code{{tx_cnt_tens,tx_cnt_ones,rx_buf}}；DK7～DK6显示发送计数，DK5～DK0显示接收内容。\code{digit_en} 是逻辑上的高有效显示掩码，与物理位选极性不是同一概念。
+
+\begin{tabularx}{\linewidth}{p{26mm}Y Y}
+\toprule & Minisys & EGO1\\\midrule
+主芯片 & \code{xc7a100tfgg484-1} & \code{xc7a35tcsg324-1}\\
+clk / S1 / S2 & Y18 / R1 / P1 & P17 / R17 / R15\\
+UART RX / TX & Y19 / V18 & N5 / T4\\
+SW0（计算器版） & W4 & R1\\
+位选和段选 & 低电平有效 & 高电平有效\\
+段选总线 & 一组 \code{led_cx} & 两组 \code{led_cx}、\code{led_cx1}\\
+字符0段码 & \code{8'h03} & \code{8'hFC}\\
+负号段码 & \code{8'hFD} & \code{8'h02}\\\bottomrule
+\end{tabularx}
+
+段码位序为 \code{{CA,CB,CC,CD,CE,CF,CG,DP}}。每位扫描1ms，整屏8ms。\code{scan_sel=0}选DK7，依次到DK0。计算器模式把A译成负号；必做模式仍显示A。
+
+\chapterpage{简易计算器：从表达式到结果}
+\subsection{接口和正常输入}
+输入形如 \code{12+3=}、\code{36/12=}。支持两个0～99的无符号十进制操作数，四则运算和连续处理。运算中允许出现负的减法结果；整数除法舍去余数，除0当前约定返回0。表达式异常处理不属于本次课程正常输入验收重点。
+
+\begin{tabularx}{\linewidth}{p{22mm}p{26mm}Y}
+\toprule 状态 & 离开条件 & 关键动作\\\midrule
+\code{S_OP1} & 已收数字且收到运算符 & 累积1～2位数字到 \code{op1}，锁存 \code{op_code}。\\
+\code{S_OP2} & 已收数字且收到等号 & 累积1～2位数字到 \code{op2}。\\
+\code{S_CALC} & 下一拍 & 使用Verilog的 \code{+ - * /}，确定绝对值和 \code{is_neg}，装入BCD转换寄存器。\\
+\code{S_BCD} & \code{bcd_cnt=13} & 完成第14次加3左移，生成显示、ASCII缓冲和长度。\\
+\code{S_TX} & 最后字符的间隔计满 & 按2ms请求间隔发结果与CR/LF，清空操作数及位数计数，回到 \code{S_OP1}。\\\bottomrule
+\end{tabularx}
+
+\subsection{三段式不是只能出现三个always}
+\begin{enumerate}
+\item 状态寄存器：在时钟沿 \code{state <= next_state}。
+\item 次态组合逻辑：按现态、输入、计数条件计算next\_state，使用阻塞赋值。
+\item 状态相关寄存器/输出：时钟沿更新，使用非阻塞赋值。按职责可拆成多个always，仍然是三段式。
+\end{enumerate}
+例如接收 \code{12}：首位存1，第二位按 \(1\times10+2=12\) 累积；代码通过左移3位与左移1位相加实现乘10。\code{op1_cnt/op2_cnt}记录收了几位，避免要求用户给单个数字补0。
+
+\subsection{符号与范围}
+最大乘积为 \(99\times99=9801<2^{14}\)，低14位足以存绝对值。\code{3-12=} 将绝对值9与 \code{is_neg=1} 分开处理，不把补码直接送显示。发送时前置 \code{8'h2D}，显示用A半字节代表负号。
+
+\textbf{正常操作边界：}回复期间处于 \code{S_TX}，没有接收队列，此时新算式字节会被忽略。应等到本次回复结束再发送下一道；“连续处理”表示无需复位，不表示无限制流水并行输入。末尾CR/LF被忽略，输入下一道数字时显示会先更新为正在输入的操作数，等号后再显示结果。
+
+\chapterpage{Double Dabble、BCD与结果发送}
+\subsection{为什么不能把9801直接接到数码管}
+二进制整数9801按十六进制是2649，直接按4位一组译码会显示2649，不会显示9801。因此必须把二进制值转换为 \code{16'h9801} 这种逐位BCD形式。
+
+\code{bcd_shift[29:0]} 由高16位BCD区和低14位二进制区构成。每个周期：
+\begin{enumerate}
+\item 分别检查BCD半字节；若大于等于5，则先加3。
+\item 整个寄存器向左移1位，让二进制最高位进入BCD区。
+\item 共做14次，BCD区得到千、百、十、个四个十进制数字。
+\end{enumerate}
+原因是BCD每位合法范围只有0～9。移位相当于乘2；移位前加3，移位后等于补6，恰好修正二进制的16进位与十进制10进位之间的差异。
+
+\subsection{不要读错最后一次移位}
+当 \code{bcd_cnt=13} 时，当前寄存器尚是第13次后的值，最终数字从组合结果 \code{bcd_next} 取，而不是从仍待更新的 \code{bcd_shift} 取。否则会少处理一位。当前代码保留这一时序。
+
+\subsection{格式化示例}
+\begin{tabularx}{\linewidth}{p{24mm}p{26mm}p{40mm}Y}
+\toprule 表达式 & BCD绝对值 & 回复字节（十六进制） & 显示\\\midrule
+\code{12+3=} & \code{0015} & \code{31 35 0D 0A} & 15，其余熄灭\\
+\code{36/12=} & \code{0003} & \code{33 0D 0A} & 3，其余熄灭\\
+\code{3-12=} & \code{0009} & \code{2D 39 0D 0A} & -9，其余熄灭\\
+\code{99*99=} & \code{9801} & \code{39 38 30 31 0D 0A} & 9801\\
+\code{0+0=} & \code{0000} & \code{30 0D 0A} & 0，不能全灭\\\bottomrule
+\end{tabularx}
+
+\code{tx_c0..tx_c5} 是最多6字节的缓冲，\code{tx_len}决定长度，\code{tx_idx}选择当前字节。十进制数字变为ASCII采用 \code{{4'h3,digit}}，相当于对0～9加 \code{8'h30}。CR/LF负责让电脑文本结果换行，与必做题的13字符学号序列不同。
+
+显示时 \code{disp_buf}存BCD及可选负号，\code{disp_en}只使能实际用到的低位。负号最多加在两位减法绝对值之前，正的乘法最多4位。
+
+\chapterpage{代码规范：检查时如何解释}
+规范依据：\url{https://diglogic.p.cs-lab.top/codingstyle/codingstyle/}。第5节要求参数放在端口列表之前；这不是全部规则，应同时满足页面其余章节。
+
+\begin{longtable}{p{39mm}p{113mm}}
+\toprule 规范 & 工程中的落实与解释\\\midrule\endhead
+参数在端口前 & \code{module top #(parameter ...)(...);}；大写参数，小写端口、寄存器和线网。\\
+一个文件一个模块 & 设计文件名与模块名一致；两个平台同名模块不要混入同一个工程。\\
+一个寄存器一个驱动过程 & 同一个变量不在多个always内赋值；按职责拆分过程。同频同使能的一组信号可保留成组，例如同步级联寄存器、BCD十位个位或显示值与使能掩码。\\
+阻塞与非阻塞分工 & 组合逻辑使用 \code{=}；时序逻辑使用 \code{<=}，保证同一时钟沿按旧值采样。把过程拆开也不能把NBA旧值依赖改成顺序软件执行。\\
+组合赋值完整 & \code{if}有else、\code{case}有default；时钟型always未赋值表示保持寄存器，不需要为“凑else”写自赋值。\\
+单时钟同步设计 & 除异步rst以外，不用按键或计数脉冲作敏感列表里的时钟。使能在 \code{posedge clk} 内判断。\\
+位宽明确 & 计数器、比较值、减1常量显式给出位宽；避免拼接中的表达式无意扩展或截断。\\
+命名端口连接 & 用 \code{.data(rx_data)} 这种形式，不用位置连接。子模块output在外部接wire。\\
+功能RTL不用initial & initial、延时、wait只出现在testbench中；功能寄存器按rst复位。\\
+固定接口优先 & UART端口遵守课程定义；现有数码管端口名 \code{led_en/led_cx} 与XDC保持一致。Minisys虽然低有效，但本次不为添加\code{_n}后缀改动已验证的外部接口。\\\bottomrule
+\end{longtable}
+
+\textbf{规范化不等于功能修正。}本次保留STOP中点返回、忙时忽略请求、模式切换不自动清状态等现有约定。不要把“只改风格”理解成新增了帧校验、输入队列或模式安全握手。
+
+此前把不同位宽常量相减直接称为“功能错误”并不准确：Verilog会按上下文扩展操作数，\code{14'd10416 - 1'b1}在本例仍得到10415。使用等宽常量主要提高明确性；不能据此宣称Vivado实际产生过某个Warning。
+
+\chapterpage{现场检查、截图与排错清单}
+\subsection{三分钟演示顺序}
+\begin{enumerate}
+\item 选择Minisys工程；仅 \code{*_tb.v} 放Simulation Sources，\code{top} 设为综合顶层。检查器件、XDC、100MHz、组别03，运行Vivado Run Linter并查看实际消息。
+\item 串口设9600、8位、无校验、1停止位、STR模式；关闭自动周期发送，按需勾时间戳。按S1。
+\item SW0为0：发送A1F，检查仅接收低3位亮；发送12345678后，低6位应为345678。
+\item 点按S2：电脑收到 \code{03+2025311308}；左两位计数为13，再按一次26。按住不能一直重复发送。
+\item 空闲时SW0拨1，必要时S1清状态；逐个发送 \code{12+3=}、\code{36/12=}、\code{3-12=}、\code{99*99=}，分别核对15、3、-9、9801；每题等回复结束，不在中间复位。
+\end{enumerate}
+
+\subsection{仿真文件能证明什么}
+\code{uart_recv_tb}：10组数据55、A3、0F、F0、33、CC、FF、00、5A、A5，等valid后比对data，日志应出现 \code{All test cases passed.}。它只覆盖列出的接收情况，不能由此证明整机、帧校验、所有频偏均正确。
+
+\code{calc_tb}：直接向计算器注入ASCII和有效脉冲，并把字符间隔缩成10拍，方便看四道算式的状态、显示和发送接口。\textbf{该文件没有自动比对结果的断言，也没有例化UART链路；跑到finish不等于自动测试通过。}观察 \code{tx_valid/tx_data/disp_buf/disp_en/state/next_state} 核对结果；上板仍使用200000拍间隔。
+
+\subsection{建议保留的证据}
+\begin{itemize}
+\item 必做：接收测试Tcl日志；一个完整UART帧（输入、现态、次态、计数、位索引、输出）；系统框图和接收状态图。
+\item 上板：不足6位的真正熄灭、最近6位、累计字符计数；PC接收完整组别学号截图。
+\item 附加：四则输入/回复截图、结果数码管照片、连续计算记录；解析状态机图和 \code{calc_fsm} 关键波形。
+\item 材料目录与是否必须同框，以最新的\textbf{2026正式实验报告模板}为准。本说明是学习和检查清单，不替代模板，也不伪造缺失的实测记录。
+\end{itemize}
+
+\subsection{排错顺序}
+\begin{tabularx}{\linewidth}{p{35mm}Y}
+\toprule 现象 & 先检查\\\midrule
+收到乱码 & COM号、9600/8N1、板卡RX/TX引脚、100MHz约束、FPGA发送空闲是否为高。\\
+显示像反了或全亮 & 板卡型号、位选/段选极性、段码顺序；不能用EGO1段码直接驱动Minisys。\\
+显示前面都是0 & 看 \code{digit_en/rx_en_mask}，不是只看 \code{rx_buf} 的高位值。\\
+结果串接在一起 & 检查STR和CR/LF显示设置；以HEX确认回复含0D、0A。\\
+第二题无回复 & 是否在前一次回复期间发送；是否选错模式；是否已输入等号；表达式解析当前停在哪一态。\\\bottomrule
+\end{tabularx}
+
+\vfill
+\small 资料：课程《实验6》与《Verilog代码规范》；信号名、组别和具体阈值以本次上传源码为依据。请先理解数据流再答辩，不将本指南中的预期行为描述当作新增实测结果。
+\end{document}

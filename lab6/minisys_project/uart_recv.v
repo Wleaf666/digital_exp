@@ -76,34 +76,21 @@ module uart_recv (
     always @(posedge clk or posedge rst) begin
         if (rst) begin
             cnt      <= 14'd0;
-            bit_idx  <= 3'd0;
-            rx_shift <= 8'h00;
-            valid    <= 1'b0;
-            data     <= 8'h00;
         end else begin
-            valid <= 1'b0;
             case (state)
                 IDLE: begin
                     cnt     <= 14'd0;
-                    bit_idx <= 3'd0;
                 end
                 START: begin
                     if (cnt == BIT_CYC - 14'd1) begin
                         cnt     <= 14'd0;
-                        bit_idx <= 3'd0;
                     end else begin
                         cnt <= cnt + 14'd1;
                     end
                 end
                 DATA: begin
-                    if (cnt == HALF_CYC - 14'd1) begin
-                        rx_shift[bit_idx] <= din_r1;
-                    end
                     if (cnt == BIT_CYC - 14'd1) begin
                         cnt <= 14'd0;
-                        if (bit_idx < 3'd7) begin
-                            bit_idx <= bit_idx + 3'd1;
-                        end
                     end else begin
                         cnt <= cnt + 14'd1;
                     end
@@ -111,8 +98,6 @@ module uart_recv (
                 STOP: begin
                     if (cnt == HALF_CYC - 14'd1) begin
                         cnt   <= 14'd0;
-                        valid <= 1'b1;
-                        data  <= rx_shift;
                     end else begin
                         cnt <= cnt + 14'd1;
                     end
@@ -120,6 +105,77 @@ module uart_recv (
                 default: begin
                     cnt <= 14'd0;
                 end
+            endcase
+        end
+    end
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            bit_idx  <= 3'd0;
+        end else begin
+            case (state)
+                IDLE: begin
+                    bit_idx <= 3'd0;
+                end
+                START: begin
+                    if (cnt == BIT_CYC - 14'd1) begin
+                        bit_idx <= 3'd0;
+                    end
+                end
+                DATA: begin
+                    if (cnt == BIT_CYC - 14'd1) begin
+                        if (bit_idx < 3'd7) begin
+                            bit_idx <= bit_idx + 3'd1;
+                        end
+                    end
+                end
+                default: begin end
+            endcase
+        end
+    end
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            rx_shift <= 8'h00;
+        end else begin
+            case (state)
+                DATA: begin
+                    if (cnt == HALF_CYC - 14'd1) begin
+                        rx_shift[bit_idx] <= din_r1;
+                    end
+                end
+                default: begin end
+            endcase
+        end
+    end
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            valid    <= 1'b0;
+        end else begin
+            valid <= 1'b0;
+            case (state)
+                STOP: begin
+                    if (cnt == HALF_CYC - 14'd1) begin
+                        valid <= 1'b1;
+                    end
+                end
+                default: begin end
+            endcase
+        end
+    end
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            data     <= 8'h00;
+        end else begin
+            case (state)
+                STOP: begin
+                    if (cnt == HALF_CYC - 14'd1) begin
+                        data  <= rx_shift;
+                    end
+                end
+                default: begin end
             endcase
         end
     end

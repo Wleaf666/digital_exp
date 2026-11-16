@@ -113,91 +113,190 @@ module calc_fsm #(
     always @(posedge clk or posedge rst) begin
         if (rst) begin
             op1       <= 7'd0;
-            op2       <= 7'd0;
-            op1_cnt   <= 2'd0;
-            op2_cnt   <= 2'd0;
-            op_code   <= OP_ADD;
-            is_neg    <= 1'b0;
-            bcd_shift <= 30'd0;
-            bcd_cnt   <= 4'd0;
-            tx_c0     <= 8'h00;
-            tx_c1     <= 8'h00;
-            tx_c2     <= 8'h00;
-            tx_c3     <= 8'h00;
-            tx_c4     <= 8'h00;
-            tx_c5     <= 8'h00;
-            tx_len    <= 3'd0;
-            tx_idx    <= 3'd0;
-            gap_cnt   <= 20'd0;
-            tx_valid  <= 1'b0;
-            disp_buf  <= 32'd0;
-            disp_en   <= 8'b0000_0000;
         end else begin
-            tx_valid <= 1'b0;
             case (state)
                 S_OP1: begin
                     if (rx_valid) begin
                         if (is_digit) begin
                             if (op1_cnt == 2'd0) begin
                                 op1      <= {3'd0, rx_data[3:0]};
-                                op1_cnt  <= 2'd1;
-                                disp_buf <= {28'd0, rx_data[3:0]};
-                                disp_en  <= 8'b0000_0001;
                             end else if (op1_cnt == 2'd1) begin
                                 op1      <= {op1[3:0], 3'd0} + {2'd0, op1[3:0], 1'b0} + {3'd0, rx_data[3:0]};
-                                op1_cnt  <= 2'd2;
-                                disp_buf <= {24'd0, disp_buf[3:0], rx_data[3:0]};
-                                disp_en  <= 8'b0000_0011;
                             end
-                        end else if ((op1_cnt != 2'd0) && is_op) begin
-                            if (rx_data == 8'h2B)
-                                op_code <= OP_ADD;
-                            else if (rx_data == 8'h2D)
-                                op_code <= OP_SUB;
-                            else if (rx_data == 8'h2A)
-                                op_code <= OP_MUL;
-                            else
-                                op_code <= OP_DIV;
                         end
                     end
                 end
+                S_TX: begin
+                    if (gap_cnt == 20'd0) begin end else if (gap_cnt >= CHAR_GAP - 20'd1) begin
+                        if (tx_idx >= tx_len - 3'd1) begin
+                            op1     <= 7'd0;
+                        end
+                    end
+                end
+                default: begin end
+            endcase
+        end
+    end
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            op2       <= 7'd0;
+        end else begin
+            case (state)
                 S_OP2: begin
                     if (rx_valid && is_digit) begin
                         if (op2_cnt == 2'd0) begin
                             op2      <= {3'd0, rx_data[3:0]};
-                            op2_cnt  <= 2'd1;
-                            disp_buf <= {28'd0, rx_data[3:0]};
-                            disp_en  <= 8'b0000_0001;
                         end else if (op2_cnt == 2'd1) begin
                             op2      <= {op2[3:0], 3'd0} + {2'd0, op2[3:0], 1'b0} + {3'd0, rx_data[3:0]};
-                            op2_cnt  <= 2'd2;
-                            disp_buf <= {24'd0, disp_buf[3:0], rx_data[3:0]};
-                            disp_en  <= 8'b0000_0011;
                         end
                     end
                 end
+                S_TX: begin
+                    if (gap_cnt == 20'd0) begin end else if (gap_cnt >= CHAR_GAP - 20'd1) begin
+                        if (tx_idx >= tx_len - 3'd1) begin
+                            op2     <= 7'd0;
+                        end
+                    end
+                end
+                default: begin end
+            endcase
+        end
+    end
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            op1_cnt   <= 2'd0;
+        end else begin
+            case (state)
+                S_OP1: begin
+                    if (rx_valid) begin
+                        if (is_digit) begin
+                            if (op1_cnt == 2'd0) begin
+                                op1_cnt  <= 2'd1;
+                            end else if (op1_cnt == 2'd1) begin
+                                op1_cnt  <= 2'd2;
+                            end
+                        end
+                    end
+                end
+                S_TX: begin
+                    if (gap_cnt == 20'd0) begin end else if (gap_cnt >= CHAR_GAP - 20'd1) begin
+                        if (tx_idx >= tx_len - 3'd1) begin
+                            op1_cnt <= 2'd0;
+                        end
+                    end
+                end
+                default: begin end
+            endcase
+        end
+    end
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            op2_cnt   <= 2'd0;
+        end else begin
+            case (state)
+                S_OP2: begin
+                    if (rx_valid && is_digit) begin
+                        if (op2_cnt == 2'd0) begin
+                            op2_cnt  <= 2'd1;
+                        end else if (op2_cnt == 2'd1) begin
+                            op2_cnt  <= 2'd2;
+                        end
+                    end
+                end
+                S_TX: begin
+                    if (gap_cnt == 20'd0) begin end else if (gap_cnt >= CHAR_GAP - 20'd1) begin
+                        if (tx_idx >= tx_len - 3'd1) begin
+                            op2_cnt <= 2'd0;
+                        end
+                    end
+                end
+                default: begin end
+            endcase
+        end
+    end
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            op_code   <= OP_ADD;
+        end else begin
+            case (state)
+                S_OP1: begin
+                    if (rx_valid) begin
+                        if (is_digit) begin end else if ((op1_cnt != 2'd0) && is_op) begin
+                            if (rx_data == 8'h2B) begin
+                                op_code <= OP_ADD;
+                            end else if (rx_data == 8'h2D) begin
+                                op_code <= OP_SUB;
+                            end else if (rx_data == 8'h2A) begin
+                                op_code <= OP_MUL;
+                            end else begin
+                                op_code <= OP_DIV;
+                            end
+                        end
+                    end
+                end
+                default: begin end
+            endcase
+        end
+    end
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            is_neg    <= 1'b0;
+        end else begin
+            case (state)
                 S_CALC: begin
-                    bcd_cnt <= 4'd0;
                     case (op_code)
                         OP_ADD: begin
                             is_neg    <= 1'b0;
-                            bcd_shift <= {16'd0, ({7'd0, op1} + {7'd0, op2})};
                         end
                         OP_SUB: begin
                             if (op1 >= op2) begin
                                 is_neg    <= 1'b0;
-                                bcd_shift <= {16'd0, {7'd0, op1 - op2}};
                             end else begin
                                 is_neg    <= 1'b1;
-                                bcd_shift <= {16'd0, {7'd0, op2 - op1}};
                             end
                         end
                         OP_MUL: begin
                             is_neg    <= 1'b0;
-                            bcd_shift <= {16'd0, ({7'd0, op1} * {7'd0, op2})};
                         end
                         OP_DIV: begin
                             is_neg <= 1'b0;
+                        end
+                        default: begin
+                            is_neg    <= 1'b0;
+                        end
+                    endcase
+                end
+                default: begin end
+            endcase
+        end
+    end
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            bcd_shift <= 30'd0;
+        end else begin
+            case (state)
+                S_CALC: begin
+                    case (op_code)
+                        OP_ADD: begin
+                            bcd_shift <= {16'd0, ({7'd0, op1} + {7'd0, op2})};
+                        end
+                        OP_SUB: begin
+                            if (op1 >= op2) begin
+                                bcd_shift <= {16'd0, {7'd0, op1 - op2}};
+                            end else begin
+                                bcd_shift <= {16'd0, {7'd0, op2 - op1}};
+                            end
+                        end
+                        OP_MUL: begin
+                            bcd_shift <= {16'd0, ({7'd0, op1} * {7'd0, op2})};
+                        end
+                        OP_DIV: begin
                             if (op2 == 7'd0) begin
                                 bcd_shift <= 30'd0;
                             end else begin
@@ -205,16 +304,48 @@ module calc_fsm #(
                             end
                         end
                         default: begin
-                            is_neg    <= 1'b0;
                             bcd_shift <= 30'd0;
                         end
                     endcase
                 end
                 S_BCD: begin
                     bcd_shift <= bcd_next;
+                end
+                default: begin end
+            endcase
+        end
+    end
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            bcd_cnt   <= 4'd0;
+        end else begin
+            case (state)
+                S_CALC: begin
+                    bcd_cnt <= 4'd0;
+                end
+                S_BCD: begin
+                    if (bcd_cnt == 4'd13) begin end else begin
+                        bcd_cnt <= bcd_cnt + 4'd1;
+                    end
+                end
+                default: begin end
+            endcase
+        end
+    end
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            tx_c0     <= 8'h00;
+            tx_c1     <= 8'h00;
+            tx_c2     <= 8'h00;
+            tx_c3     <= 8'h00;
+            tx_c4     <= 8'h00;
+            tx_c5     <= 8'h00;
+        end else begin
+            case (state)
+                S_BCD: begin
                     if (bcd_cnt == 4'd13) begin
-                        tx_idx  <= 3'd0;
-                        gap_cnt <= 20'd0;
                         if (is_neg) begin
                             if (bcd_next[21:18] != 4'd0) begin
                                 tx_c0    <= 8'h2D;
@@ -223,9 +354,6 @@ module calc_fsm #(
                                 tx_c3    <= 8'h0D;
                                 tx_c4    <= 8'h0A;
                                 tx_c5    <= 8'h00;
-                                tx_len   <= 3'd5;
-                                disp_buf <= {20'd0, 4'hA, bcd_next[21:18], bcd_next[17:14]};
-                                disp_en  <= 8'b0000_0111;
                             end else begin
                                 tx_c0    <= 8'h2D;
                                 tx_c1    <= {4'h3, bcd_next[17:14]};
@@ -233,9 +361,6 @@ module calc_fsm #(
                                 tx_c3    <= 8'h0A;
                                 tx_c4    <= 8'h00;
                                 tx_c5    <= 8'h00;
-                                tx_len   <= 3'd4;
-                                disp_buf <= {24'd0, 4'hA, bcd_next[17:14]};
-                                disp_en  <= 8'b0000_0011;
                             end
                         end else begin
                             if (bcd_next[29:26] != 4'd0) begin
@@ -245,9 +370,6 @@ module calc_fsm #(
                                 tx_c3    <= {4'h3, bcd_next[17:14]};
                                 tx_c4    <= 8'h0D;
                                 tx_c5    <= 8'h0A;
-                                tx_len   <= 3'd6;
-                                disp_buf <= {16'd0, bcd_next[29:26], bcd_next[25:22], bcd_next[21:18], bcd_next[17:14]};
-                                disp_en  <= 8'b0000_1111;
                             end else if (bcd_next[25:22] != 4'd0) begin
                                 tx_c0    <= {4'h3, bcd_next[25:22]};
                                 tx_c1    <= {4'h3, bcd_next[21:18]};
@@ -255,9 +377,6 @@ module calc_fsm #(
                                 tx_c3    <= 8'h0D;
                                 tx_c4    <= 8'h0A;
                                 tx_c5    <= 8'h00;
-                                tx_len   <= 3'd5;
-                                disp_buf <= {20'd0, bcd_next[25:22], bcd_next[21:18], bcd_next[17:14]};
-                                disp_en  <= 8'b0000_0111;
                             end else if (bcd_next[21:18] != 4'd0) begin
                                 tx_c0    <= {4'h3, bcd_next[21:18]};
                                 tx_c1    <= {4'h3, bcd_next[17:14]};
@@ -265,9 +384,6 @@ module calc_fsm #(
                                 tx_c3    <= 8'h0A;
                                 tx_c4    <= 8'h00;
                                 tx_c5    <= 8'h00;
-                                tx_len   <= 3'd4;
-                                disp_buf <= {24'd0, bcd_next[21:18], bcd_next[17:14]};
-                                disp_en  <= 8'b0000_0011;
                             end else begin
                                 tx_c0    <= {4'h3, bcd_next[17:14]};
                                 tx_c1    <= 8'h0D;
@@ -275,37 +391,174 @@ module calc_fsm #(
                                 tx_c3    <= 8'h00;
                                 tx_c4    <= 8'h00;
                                 tx_c5    <= 8'h00;
-                                tx_len   <= 3'd3;
-                                disp_buf <= {28'd0, bcd_next[17:14]};
-                                disp_en  <= 8'b0000_0001;
                             end
                         end
-                    end else begin
-                        bcd_cnt <= bcd_cnt + 4'd1;
+                    end
+                end
+                default: begin end
+            endcase
+        end
+    end
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            tx_len    <= 3'd0;
+        end else begin
+            case (state)
+                S_BCD: begin
+                    if (bcd_cnt == 4'd13) begin
+                        if (is_neg) begin
+                            if (bcd_next[21:18] != 4'd0) begin
+                                tx_len   <= 3'd5;
+                            end else begin
+                                tx_len   <= 3'd4;
+                            end
+                        end else begin
+                            if (bcd_next[29:26] != 4'd0) begin
+                                tx_len   <= 3'd6;
+                            end else if (bcd_next[25:22] != 4'd0) begin
+                                tx_len   <= 3'd5;
+                            end else if (bcd_next[21:18] != 4'd0) begin
+                                tx_len   <= 3'd4;
+                            end else begin
+                                tx_len   <= 3'd3;
+                            end
+                        end
+                    end
+                end
+                default: begin end
+            endcase
+        end
+    end
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            tx_idx    <= 3'd0;
+        end else begin
+            case (state)
+                S_BCD: begin
+                    if (bcd_cnt == 4'd13) begin
+                        tx_idx  <= 3'd0;
                     end
                 end
                 S_TX: begin
-                    if (gap_cnt == 20'd0) begin
-                        tx_valid <= 1'b1;
-                        gap_cnt  <= gap_cnt + 20'd1;
-                    end else if (gap_cnt >= CHAR_GAP - 20'd1) begin
-                        gap_cnt <= 20'd0;
+                    if (gap_cnt == 20'd0) begin end else if (gap_cnt >= CHAR_GAP - 20'd1) begin
                         if (tx_idx >= tx_len - 3'd1) begin
-                            op1     <= 7'd0;
-                            op2     <= 7'd0;
-                            op1_cnt <= 2'd0;
-                            op2_cnt <= 2'd0;
                             tx_idx  <= 3'd0;
                         end else begin
                             tx_idx <= tx_idx + 3'd1;
                         end
+                    end
+                end
+                default: begin end
+            endcase
+        end
+    end
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            gap_cnt   <= 20'd0;
+        end else begin
+            case (state)
+                S_BCD: begin
+                    if (bcd_cnt == 4'd13) begin
+                        gap_cnt <= 20'd0;
+                    end
+                end
+                S_TX: begin
+                    if (gap_cnt == 20'd0) begin
+                        gap_cnt  <= gap_cnt + 20'd1;
+                    end else if (gap_cnt >= CHAR_GAP - 20'd1) begin
+                        gap_cnt <= 20'd0;
                     end else begin
                         gap_cnt <= gap_cnt + 20'd1;
+                    end
+                end
+                default: begin end
+            endcase
+        end
+    end
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            tx_valid  <= 1'b0;
+        end else begin
+            tx_valid <= 1'b0;
+            case (state)
+                S_OP1: begin end
+                S_OP2: begin end
+                S_CALC: begin end
+                S_BCD: begin end
+                S_TX: begin
+                    if (gap_cnt == 20'd0) begin
+                        tx_valid <= 1'b1;
                     end
                 end
                 default: begin
                     tx_valid <= 1'b0;
                 end
+            endcase
+        end
+    end
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            disp_buf  <= 32'd0;
+            disp_en   <= 8'b0000_0000;
+        end else begin
+            case (state)
+                S_OP1: begin
+                    if (rx_valid) begin
+                        if (is_digit) begin
+                            if (op1_cnt == 2'd0) begin
+                                disp_buf <= {28'd0, rx_data[3:0]};
+                                disp_en  <= 8'b0000_0001;
+                            end else if (op1_cnt == 2'd1) begin
+                                disp_buf <= {24'd0, disp_buf[3:0], rx_data[3:0]};
+                                disp_en  <= 8'b0000_0011;
+                            end
+                        end
+                    end
+                end
+                S_OP2: begin
+                    if (rx_valid && is_digit) begin
+                        if (op2_cnt == 2'd0) begin
+                            disp_buf <= {28'd0, rx_data[3:0]};
+                            disp_en  <= 8'b0000_0001;
+                        end else if (op2_cnt == 2'd1) begin
+                            disp_buf <= {24'd0, disp_buf[3:0], rx_data[3:0]};
+                            disp_en  <= 8'b0000_0011;
+                        end
+                    end
+                end
+                S_BCD: begin
+                    if (bcd_cnt == 4'd13) begin
+                        if (is_neg) begin
+                            if (bcd_next[21:18] != 4'd0) begin
+                                disp_buf <= {20'd0, 4'hA, bcd_next[21:18], bcd_next[17:14]};
+                                disp_en  <= 8'b0000_0111;
+                            end else begin
+                                disp_buf <= {24'd0, 4'hA, bcd_next[17:14]};
+                                disp_en  <= 8'b0000_0011;
+                            end
+                        end else begin
+                            if (bcd_next[29:26] != 4'd0) begin
+                                disp_buf <= {16'd0, bcd_next[29:26], bcd_next[25:22], bcd_next[21:18], bcd_next[17:14]};
+                                disp_en  <= 8'b0000_1111;
+                            end else if (bcd_next[25:22] != 4'd0) begin
+                                disp_buf <= {20'd0, bcd_next[25:22], bcd_next[21:18], bcd_next[17:14]};
+                                disp_en  <= 8'b0000_0111;
+                            end else if (bcd_next[21:18] != 4'd0) begin
+                                disp_buf <= {24'd0, bcd_next[21:18], bcd_next[17:14]};
+                                disp_en  <= 8'b0000_0011;
+                            end else begin
+                                disp_buf <= {28'd0, bcd_next[17:14]};
+                                disp_en  <= 8'b0000_0001;
+                            end
+                        end
+                    end
+                end
+                default: begin end
             endcase
         end
     end

@@ -32,9 +32,15 @@ module rx_ctrl (
     always @(posedge clk or posedge rst) begin
         if (rst) begin
             rx_buf   <= 24'h000000;
-            rx_count <= 3'd0;
         end else if (rx_valid && is_valid_hex) begin
             rx_buf <= {rx_buf[19:0], hex_val};
+        end
+    end
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            rx_count <= 3'd0;
+        end else if (rx_valid && is_valid_hex) begin
             if (rx_count < 3'd6) begin
                 rx_count <= rx_count + 3'd1;
             end

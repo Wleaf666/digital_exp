@@ -29,15 +29,30 @@ module debounce #(
     always @(posedge clk or posedge rst) begin
         if (rst) begin
             cnt       <= 32'd0;
-            btn_prev  <= 1'b0;
-            btn_clean <= 1'b0;
         end else begin
             if (btn_r1 != btn_prev) begin
-                btn_prev <= btn_r1;
                 cnt      <= 32'd0;
             end else if (cnt < CNT_MAX) begin
                 cnt <= cnt + 32'd1;
-            end else begin
+            end
+        end
+    end
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            btn_prev  <= 1'b0;
+        end else begin
+            if (btn_r1 != btn_prev) begin
+                btn_prev <= btn_r1;
+            end
+        end
+    end
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            btn_clean <= 1'b0;
+        end else begin
+            if (btn_r1 != btn_prev) begin end else if (cnt < CNT_MAX) begin end else begin
                 btn_clean <= btn_prev;
             end
         end

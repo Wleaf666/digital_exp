@@ -61,26 +61,54 @@ module uart_send (
     always @(posedge clk or posedge rst) begin
         if (rst) begin
             dout     <= 1'b1;
-            cnt      <= 14'd0;
-            bit_idx  <= 3'd0;
-            data_reg <= 8'h00;
         end else begin
             case (state)
                 IDLE: begin
                     dout <= 1'b1;
-                    cnt  <= 14'd0;
-                    bit_idx <= 3'd0;
                     if (valid) begin
-                        data_reg <= data;
                         dout     <= 1'b0;
+                    end
+                end
+                START: begin
+                    if (cnt == BIT_CYC - 14'd1) begin
+                        dout    <= data_reg[0];
+                    end
+                end
+                DATA: begin
+                    if (cnt == BIT_CYC - 14'd1) begin
+                        if (bit_idx == 3'd7) begin
+                            dout <= 1'b1;
+                        end else begin
+                            dout    <= data_reg[bit_idx + 3'd1];
+                        end
+                    end
+                end
+                STOP: begin
+                    if (cnt == BIT_CYC - 14'd1) begin
+                        dout <= 1'b1;
+                    end
+                end
+                default: begin
+                    dout <= 1'b1;
+                end
+            endcase
+        end
+    end
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            cnt      <= 14'd0;
+        end else begin
+            case (state)
+                IDLE: begin
+                    cnt  <= 14'd0;
+                    if (valid) begin
                         cnt      <= 14'd0;
                     end
                 end
                 START: begin
                     if (cnt == BIT_CYC - 14'd1) begin
                         cnt     <= 14'd0;
-                        bit_idx <= 3'd0;
-                        dout    <= data_reg[0];
                     end else begin
                         cnt <= cnt + 14'd1;
                     end
@@ -88,12 +116,6 @@ module uart_send (
                 DATA: begin
                     if (cnt == BIT_CYC - 14'd1) begin
                         cnt <= 14'd0;
-                        if (bit_idx == 3'd7) begin
-                            dout <= 1'b1;
-                        end else begin
-                            bit_idx <= bit_idx + 3'd1;
-                            dout    <= data_reg[bit_idx + 3'd1];
-                        end
                     end else begin
                         cnt <= cnt + 14'd1;
                     end
@@ -101,15 +123,53 @@ module uart_send (
                 STOP: begin
                     if (cnt == BIT_CYC - 14'd1) begin
                         cnt  <= 14'd0;
-                        dout <= 1'b1;
                     end else begin
                         cnt <= cnt + 14'd1;
                     end
                 end
                 default: begin
-                    dout <= 1'b1;
                     cnt  <= 14'd0;
                 end
+            endcase
+        end
+    end
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            bit_idx  <= 3'd0;
+        end else begin
+            case (state)
+                IDLE: begin
+                    bit_idx <= 3'd0;
+                end
+                START: begin
+                    if (cnt == BIT_CYC - 14'd1) begin
+                        bit_idx <= 3'd0;
+                    end
+                end
+                DATA: begin
+                    if (cnt == BIT_CYC - 14'd1) begin
+                        if (bit_idx == 3'd7) begin end else begin
+                            bit_idx <= bit_idx + 3'd1;
+                        end
+                    end
+                end
+                default: begin end
+            endcase
+        end
+    end
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            data_reg <= 8'h00;
+        end else begin
+            case (state)
+                IDLE: begin
+                    if (valid) begin
+                        data_reg <= data;
+                    end
+                end
+                default: begin end
             endcase
         end
     end

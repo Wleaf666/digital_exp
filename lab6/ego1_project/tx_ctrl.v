@@ -2,7 +2,7 @@
 
 module tx_ctrl #(
     parameter GROUP_C0 = 8'h30,
-    parameter GROUP_C1 = 8'h31,
+    parameter GROUP_C1 = 8'h33,
     parameter CHAR_GAP = 20'd200_000
 )(
     input  wire       clk,
@@ -40,39 +40,87 @@ module tx_ctrl #(
     always @(posedge clk or posedge rst) begin
         if (rst) begin
             sending     <= 1'b0;
-            char_idx    <= 4'd0;
-            gap_cnt     <= 20'd0;
-            tx_valid    <= 1'b0;
-            tx_cnt_tens <= 4'd0;
-            tx_cnt_ones <= 4'd0;
         end else begin
-            tx_valid <= 1'b0;
             if (!sending) begin
                 if (s2_pulse) begin
                     sending  <= 1'b1;
+                end
+            end else begin
+                if (gap_cnt == 20'd0) begin end else if (gap_cnt >= CHAR_GAP - 20'd1) begin
+                    if (char_idx == 4'd12) begin
+                        sending  <= 1'b0;
+                    end
+                end
+            end
+        end
+    end
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            char_idx    <= 4'd0;
+        end else begin
+            if (!sending) begin
+                if (s2_pulse) begin
                     char_idx <= 4'd0;
+                end
+            end else begin
+                if (gap_cnt == 20'd0) begin end else if (gap_cnt >= CHAR_GAP - 20'd1) begin
+                    if (char_idx == 4'd12) begin
+                        char_idx <= 4'd0;
+                    end else begin
+                        char_idx <= char_idx + 4'd1;
+                    end
+                end
+            end
+        end
+    end
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            gap_cnt     <= 20'd0;
+        end else begin
+            if (!sending) begin
+                if (s2_pulse) begin
                     gap_cnt  <= 20'd0;
                 end
             end else begin
                 if (gap_cnt == 20'd0) begin
-                    tx_valid <= 1'b1;
                     gap_cnt  <= gap_cnt + 20'd1;
+                end else if (gap_cnt >= CHAR_GAP - 20'd1) begin
+                    gap_cnt <= 20'd0;
+                end else begin
+                    gap_cnt <= gap_cnt + 20'd1;
+                end
+            end
+        end
+    end
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            tx_valid    <= 1'b0;
+        end else begin
+            tx_valid <= 1'b0;
+            if (!sending) begin end else begin
+                if (gap_cnt == 20'd0) begin
+                    tx_valid <= 1'b1;
+                end
+            end
+        end
+    end
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            tx_cnt_tens <= 4'd0;
+            tx_cnt_ones <= 4'd0;
+        end else begin
+            if (!sending) begin end else begin
+                if (gap_cnt == 20'd0) begin
                     if (tx_cnt_ones == 4'd9) begin
                         tx_cnt_ones <= 4'd0;
                         tx_cnt_tens <= (tx_cnt_tens == 4'd9) ? 4'd0 : (tx_cnt_tens + 4'd1);
                     end else begin
                         tx_cnt_ones <= tx_cnt_ones + 4'd1;
                     end
-                end else if (gap_cnt >= CHAR_GAP - 20'd1) begin
-                    gap_cnt <= 20'd0;
-                    if (char_idx == 4'd12) begin
-                        sending  <= 1'b0;
-                        char_idx <= 4'd0;
-                    end else begin
-                        char_idx <= char_idx + 4'd1;
-                    end
-                end else begin
-                    gap_cnt <= gap_cnt + 20'd1;
                 end
             end
         end

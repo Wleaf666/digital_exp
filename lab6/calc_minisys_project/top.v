@@ -5,7 +5,7 @@ module top #(
     parameter DEBOUNCE_CNT_MAX = 32'd1_000_000,
     parameter CHAR_GAP         = 20'd200_000,
     parameter GROUP_C0         = 8'h30,
-    parameter GROUP_C1         = 8'h31
+    parameter GROUP_C1         = 8'h33
 )(
     input  wire       clk,
     input  wire       rst,

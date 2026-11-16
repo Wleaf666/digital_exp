@@ -18,12 +18,18 @@ module led_ctrl_unit #(
     always @(posedge clk or posedge rst) begin
         if (rst) begin
             scan_cnt <= 32'd0;
-            scan_sel <= 3'd0;
         end else if (scan_cnt >= SCAN_CNT_MAX - 32'd1) begin
             scan_cnt <= 32'd0;
-            scan_sel <= scan_sel + 3'd1;
         end else begin
             scan_cnt <= scan_cnt + 32'd1;
+        end
+    end
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            scan_sel <= 3'd0;
+        end else if (scan_cnt >= SCAN_CNT_MAX - 32'd1) begin
+            scan_sel <= scan_sel + 3'd1;
         end
     end
 
